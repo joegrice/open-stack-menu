@@ -23,6 +23,7 @@ final class ServiceMonitor: ObservableObject {
     private var refreshTask: Task<Void, Never>?
     private var timerTask: Task<Void, Never>?
     private let logger = Logger(subsystem: "com.openstackmenu.OpenStackMenu", category: "ServiceMonitor")
+    private var wakeObserver: NSObjectProtocol?
 
     // MARK: - Computed
 
@@ -75,6 +76,7 @@ final class ServiceMonitor: ObservableObject {
         refreshTask?.cancel()
         refreshTask = Task { await performRefresh() }
         scheduleNextRefresh()
+        registerForWakeNotification()
     }
 
     func stopMonitoring() {
@@ -82,6 +84,7 @@ final class ServiceMonitor: ObservableObject {
         timerTask = nil
         refreshTask?.cancel()
         refreshTask = nil
+        unregisterFromWakeNotification()
         logger.info("Monitoring stopped.")
     }
 
@@ -162,6 +165,26 @@ final class ServiceMonitor: ObservableObject {
 
     // MARK: - Private
 
+    private func registerForWakeNotification() {
+        wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.logger.info("System woke from sleep — restarting monitoring to clear stale connections")
+                self?.startMonitoring()
+            }
+        }
+    }
+
+    private func unregisterFromWakeNotification() {
+        if let observer = wakeObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(observer)
+            wakeObserver = nil
+        }
+    }
+
     private func performRefresh() async {
         guard !config.servers.isEmpty else { return }
 
@@ -180,37 +203,50 @@ final class ServiceMonitor: ObservableObject {
 
         do {
             try await withThrowingTaskGroup(
-                of: (server: ServerConnection, dockerContainers: [DockerContainerJSON]).self
+                of: (server: ServerConnection, result: Result<[DockerContainerJSON], Error>).self
             ) { group in
                 for server in enabledServers {
                     group.addTask {
-                        let containers = try await self.dockerClient.listContainers(on: server)
-                        return (server, containers)
+                        do {
+                            let containers = try await self.dockerClient.listContainers(on: server)
+                            return (server, .success(containers))
+                        } catch {
+                            return (server, .failure(error))
+                        }
                     }
                 }
 
-                for try await (server, dockerContainers) in group {
+                for try await (server, result) in group {
                     try Task.checkCancellation()
 
-                    let serverContainers = dockerClient.toContainerInfo(dockerContainers, server: server)
-                    allContainers.append(contentsOf: serverContainers)
+                    switch result {
+                    case .success(let dockerContainers):
+                        let serverContainers = dockerClient.toContainerInfo(dockerContainers, server: server)
+                        allContainers.append(contentsOf: serverContainers)
 
-                    for container in serverContainers {
-                        let baseStatus: ContainerStatus
-                        switch container.state {
-                        case "running":
-                            baseStatus = .online
-                        case "paused":
-                            baseStatus = .degraded
-                        default:
-                            baseStatus = .offline
+                        for container in serverContainers {
+                            let baseStatus: ContainerStatus
+                            switch container.state {
+                            case "running":
+                                baseStatus = .online
+                            case "paused":
+                                baseStatus = .degraded
+                            default:
+                                baseStatus = .offline
+                            }
+                            newStatuses[container.id] = baseStatus
                         }
-                        newStatuses[container.id] = baseStatus
+                    case .failure(let error):
+                        errors.append("\(server.name): \(error.localizedDescription)")
+                        for container in containers where container.serverID == server.id {
+                            newStatuses[container.id] = .offline
+                        }
                     }
                 }
             }
         } catch is CancellationError {
             isRefreshing = false
+            scheduleNextRefresh()
             return
         } catch {
             // If the task group itself fails (unlikely), mark all servers as error
@@ -223,13 +259,21 @@ final class ServiceMonitor: ObservableObject {
         }
 
         try? Task.checkCancellation()
-        if Task.isCancelled { isRefreshing = false; return }
+        if Task.isCancelled {
+            isRefreshing = false
+            scheduleNextRefresh()
+            return
+        }
 
         // Run optional HTTP health checks for running containers with health paths
         await performHealthChecks(for: allContainers, statuses: &newStatuses)
 
         try? Task.checkCancellation()
-        if Task.isCancelled { isRefreshing = false; return }
+        if Task.isCancelled {
+            isRefreshing = false
+            scheduleNextRefresh()
+            return
+        }
 
         // Update published state
         self.containers = allContainers
@@ -332,6 +376,11 @@ final class ServiceMonitor: ObservableObject {
             guard !Task.isCancelled else { return }
             await MainActor.run {
                 guard !Task.isCancelled else { return }
+                guard !self.isRefreshing else {
+                    self.logger.warning("Skipping scheduled refresh — previous refresh still in progress")
+                    self.scheduleNextRefresh()
+                    return
+                }
                 self.refreshTask?.cancel()
                 self.refreshTask = Task { await self.performRefresh() }
             }

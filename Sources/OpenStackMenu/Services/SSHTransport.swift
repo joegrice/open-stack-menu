@@ -90,6 +90,17 @@ struct SSHTransport: Sendable {
     }
 
     private func executeCommand(_ command: [String], server: ServerConnection) async throws -> Data {
+        actor ProcessState {
+            var hasResumed = false
+            func tryResume() -> Bool {
+                guard !hasResumed else { return false }
+                hasResumed = true
+                return true
+            }
+        }
+
+        let state = ProcessState()
+
         return try await withCheckedThrowingContinuation { continuation in
             let process = Process()
             process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
@@ -136,27 +147,50 @@ struct SSHTransport: Sendable {
             process.standardError = stderrPipe
 
             process.terminationHandler = { proc in
-                let outputData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
-                let errorData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
-                let errorMessage = String(data: errorData, encoding: .utf8) ?? ""
+                Task {
+                    guard await state.tryResume() else { return }
+                    proc.terminate()
 
-                if proc.terminationStatus == 0 {
-                    continuation.resume(returning: outputData)
-                } else {
-                    let message = errorMessage.trimmingCharacters(in: .whitespacesAndNewlines)
-                    logger.error("SSH failed: \(message)")
-                    let error = SSHTransportError.commandFailed(
-                        exitCode: proc.terminationStatus,
-                        message: message
-                    )
-                    continuation.resume(throwing: error)
+                    let outputData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
+                    let errorData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
+                    let errorMessage = String(data: errorData, encoding: .utf8) ?? ""
+
+                    if proc.terminationStatus == 0 {
+                        continuation.resume(returning: outputData)
+                    } else {
+                        let message = errorMessage.trimmingCharacters(in: .whitespacesAndNewlines)
+                        self.logger.error("SSH failed: \(message)")
+                        let error = SSHTransportError.commandFailed(
+                            exitCode: proc.terminationStatus,
+                            message: message
+                        )
+                        continuation.resume(throwing: error)
+                    }
                 }
+            }
+
+            // Timeout handler: kill the process if it runs too long
+            let timeoutSeconds: UInt64 = 30
+            Task {
+                try await Task.sleep(nanoseconds: timeoutSeconds * 1_000_000_000)
+                guard await state.tryResume() else { return }
+                process.terminate()
+                let errorData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
+                let errorMessage = String(data: errorData, encoding: .utf8) ?? "Process timed out after \(timeoutSeconds)s"
+                self.logger.error("SSH command timed out after \(timeoutSeconds)s: \(errorMessage)")
+                continuation.resume(throwing: SSHTransportError.commandFailed(
+                    exitCode: -1,
+                    message: "SSH command timed out after \(timeoutSeconds)s"
+                ))
             }
 
             do {
                 try process.run()
             } catch {
-                continuation.resume(throwing: error)
+                Task {
+                    guard await state.tryResume() else { return }
+                    continuation.resume(throwing: error)
+                }
             }
         }
     }
