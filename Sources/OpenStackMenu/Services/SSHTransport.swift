@@ -106,12 +106,10 @@ struct SSHTransport: Sendable {
 
             // Password authentication via SSH_ASKPASS
             if server.usePassword {
-                guard let password = KeychainHelper.retrievePassword(for: server.id) else {
+                guard KeychainHelper.passwordExists(for: server.id) else {
                     continuation.resume(throwing: SSHTransportError.passwordNotSet)
                     return
                 }
-                // Store password temporarily for askpass script
-                _ = KeychainHelper.storePassword(for: server.id, password: password)
 
                 if let askpassPath = findAskpassScript() {
                     env["SSH_ASKPASS"] = askpassPath
