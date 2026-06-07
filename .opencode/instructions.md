@@ -26,10 +26,10 @@ This project uses a 4-phase automated pipeline. The `orchestrator` agent (defaul
 
 | Phase | Agent | Model | Role |
 |---|---|---|---|
-| 1 | `planner` | qwen3.7-max | Architecture & planning |
+| 1 | `planner` | qwen3.6-plus | Architecture & planning |
 | 1.5 | `grill-me` skill | — | Interactive plan validation with user |
 | 2 | `builder` | deepseek-v4-flash | Code generation (applies React best practices + composition patterns, Go conventions) |
-| 3 | `reviewer` | qwen3.7-max | Security & architecture audit (audits against all skill rules) |
+| 3 | `reviewer` | qwen3.6-plus | Security & architecture audit (audits against all skill rules) |
 | 4 | `fixer` | deepseek-v4-pro | Apply fixes with CodeGraph |
 
 ### Skills

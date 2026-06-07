@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// The dropdown content shown when clicking the menu bar icon.
@@ -60,10 +61,18 @@ struct MenuBarView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 16)
 
-            Button("Retry") {
-                monitor.refreshAll()
+            HStack(spacing: 8) {
+                Button("Retry") {
+                    monitor.refreshAll()
+                }
+                .keyboardShortcut("r")
+
+                if let serverID = serverWithPasswordError {
+                    Button("Set Password…") {
+                        promptForPassword(serverID: serverID)
+                    }
+                }
             }
-            .keyboardShortcut("r")
 
             SettingsLink {
                 Text("Settings...")
@@ -73,15 +82,67 @@ struct MenuBarView: View {
         .frame(maxWidth: .infinity)
     }
 
+    /// Finds the first server that has a password-related error.
+    private var serverWithPasswordError: UUID? {
+        guard let error = monitor.errorMessage else { return nil }
+        if error.contains("no password stored") || error.contains("Password authentication") {
+            if let colonIndex = error.firstIndex(of: ":") {
+                let serverName = error[..<colonIndex].trimmingCharacters(in: .whitespaces)
+                return monitor.currentConfig.servers.first { $0.name == serverName }?.id
+            }
+        }
+        return nil
+    }
+
+    /// Shows an NSAlert to collect and store an SSH password.
+    private func promptForPassword(serverID: UUID) {
+        guard let server = monitor.currentConfig.servers.first(where: { $0.id == serverID }) else { return }
+
+        // Activate the app so the alert appears in front
+        NSApp.activate(ignoringOtherApps: true)
+
+        let alert = NSAlert()
+        alert.messageText = "Enter SSH Password"
+        alert.informativeText = "For \(server.name) (\(server.username)@\(server.host))"
+        alert.addButton(withTitle: "Save")
+        alert.addButton(withTitle: "Cancel")
+
+        let field = NSSecureTextField(frame: NSRect(x: 0, y: 0, width: 240, height: 22))
+        field.placeholderString = "Password"
+        alert.accessoryView = field
+
+        let response = alert.runModal()
+        if response == .alertFirstButtonReturn, !field.stringValue.isEmpty {
+            let success = KeychainHelper.storePassword(for: serverID, password: field.stringValue)
+            if success {
+                monitor.refreshAll()
+            }
+            // If it failed, the KeychainHelper already logged the error.
+            // Don't show another alert — just let the user retry.
+        }
+    }
+
     // MARK: - Container List
 
     private var containerList: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            ForEach(monitor.groupedContainers, id: \.0) { group, containers in
+        // Snapshot all data needed by child views to break the observation chain.
+        // Passing @ObservedObject down causes infinite render loops in menu bar apps.
+        let grouped = monitor.groupedContainers
+        let statuses = monitor.statuses
+        let healthResults = monitor.healthResults
+        let overrides = monitor.currentConfig.containerOverrides
+        let servers = monitor.currentConfig.servers
+
+        return VStack(alignment: .leading, spacing: 0) {
+            ForEach(grouped, id: \.0) { group, containers in
                 GroupSection(
                     title: group,
                     containers: containers,
-                    monitor: monitor
+                    statuses: statuses,
+                    healthResults: healthResults,
+                    overrides: overrides,
+                    servers: servers,
+                    onOpen: { monitor.openContainer($0) }
                 )
             }
 
@@ -162,7 +223,11 @@ struct MenuBarView: View {
 private struct GroupSection: View {
     let title: String
     let containers: [ContainerInfo]
-    @ObservedObject var monitor: ServiceMonitor
+    let statuses: [String: ContainerStatus]
+    let healthResults: [String: HealthCheckResult]
+    let overrides: [AppConfig.ContainerOverride]
+    let servers: [ServerConnection]
+    let onOpen: (ContainerInfo) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -173,10 +238,18 @@ private struct GroupSection: View {
                 .padding(.vertical, 4)
 
             ForEach(containers) { container in
+                let status = statuses[container.id] ?? .unknown
+                let healthResult = healthResults[container.id]
+                let containerOverride = overrides.first { $0.id == container.id }
+                let serverHost = servers.first { $0.id == container.serverID }?.host
+
                 ServiceRowView(
                     container: container,
-                    status: monitor.statuses[container.id] ?? .unknown,
-                    monitor: monitor
+                    status: status,
+                    healthResult: healthResult,
+                    containerOverride: containerOverride,
+                    serverHost: serverHost,
+                    onOpen: { onOpen(container) }
                 )
             }
 

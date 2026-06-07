@@ -1,7 +1,7 @@
 ---
 description: Phase 3 of the auto-orchestration pipeline. Audits generated code for security, architecture, and performance issues.
 mode: subagent
-model: opencode-go/qwen3.7-max
+model: opencode-go/qwen3.6-plus
 permission:
   edit: deny
   bash: ask

@@ -32,7 +32,7 @@ debug:
 	@echo "✅ Debug app bundle created at $(APP_BUNDLE)"
 
 ## Launch the built app
-run:
+run: build
 	open $(APP_BUNDLE)
 
 ## Remove build artifacts

@@ -16,7 +16,7 @@
     "planner": {
       "description": "Phase 1: Analyzes tasks and produces architecture plans",
       "mode": "subagent",
-      "model": "opencode-go/qwen3.7-max",
+      "model": "opencode-go/qwen3.6-plus",
       "permission": {
         "edit": "deny",
         "bash": "ask"
@@ -30,7 +30,7 @@
     "reviewer": {
       "description": "Phase 3: Audits code for security, architecture, and performance issues",
       "mode": "subagent",
-      "model": "opencode-go/qwen3.7-max",
+      "model": "opencode-go/qwen3.6-plus",
       "permission": {
         "edit": "deny",
         "bash": "ask"

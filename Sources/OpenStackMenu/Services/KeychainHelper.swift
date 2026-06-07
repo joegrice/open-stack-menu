@@ -1,6 +1,7 @@
 import Foundation
-import Security
 import LocalAuthentication
+import os
+import Security
 
 /// Securely stores and retrieves SSH passwords in the macOS Keychain.
 /// Each password is keyed by server connection ID.
@@ -16,7 +17,7 @@ struct KeychainHelper: Sendable {
     }
 
     /// Stores a password for a server in the Keychain.
-    /// Uses Touch ID access control when biometry is available.
+    /// Uses Touch ID access control when available and properly codesigned.
     static func storePassword(for serverID: UUID, password: String) -> Bool {
         let account = serverID.uuidString
         let passwordData = password.data(using: .utf8)!
@@ -36,7 +37,8 @@ struct KeychainHelper: Sendable {
             kSecValueData as String: passwordData,
         ]
 
-        // Enable Touch ID access control when available
+        // Try to enable Touch ID access control when available
+        // This may fail for ad-hoc signed apps, so we fall back gracefully
         if isBiometryAvailable {
             var error: Unmanaged<CFError>?
             let accessControl = SecAccessControlCreateWithFlags(
@@ -50,7 +52,20 @@ struct KeychainHelper: Sendable {
             }
         }
 
-        let status = SecItemAdd(query as CFDictionary, nil)
+        var status = SecItemAdd(query as CFDictionary, nil)
+
+        // If biometric access control failed (common with ad-hoc signing),
+        // retry without it
+        if status != errSecSuccess, query[kSecAttrAccessControl as String] != nil {
+            query.removeValue(forKey: kSecAttrAccessControl as String)
+            status = SecItemAdd(query as CFDictionary, nil)
+        }
+
+        if status != errSecSuccess {
+            Logger(subsystem: "com.openstackmenu.OpenStackMenu", category: "Keychain")
+                .error("Keychain store failed: \(status) (\(SecCopyErrorMessageString(status, nil) as String? ?? "unknown"))")
+        }
+
         return status == errSecSuccess
     }
 
