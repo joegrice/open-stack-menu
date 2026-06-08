@@ -1,147 +1,86 @@
-# Open Stack Menu
+<p align="center">
+  <h1 align="center">Open Stack Menu</h1>
+  <p align="center">
+    A macOS menu bar app to monitor your Docker containers at a glance.
+  </p>
+</p>
 
-A macOS menu bar application that monitors Docker containers on home servers. Shows container status (online/offline/degraded) and provides quick links to open them in a browser.
+<p align="center">
+  <img src="assets/screenshot.png" alt="Open Stack Menu screenshot" width="400" />
+</p>
+
+<p align="center">
+  <a href="https://swiftpackageindex.com/joe/open-stack-menu">
+    <img src="https://img.shields.io/badge/Swift-6.3+-orange.svg" alt="Swift 6.3+" />
+  </a>
+  <a href="https://github.com/joe/open-stack-menu/blob/main/LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License" />
+  </a>
+  <img src="https://img.shields.io/badge/platform-macOS%2014+-lightgrey.svg" alt="macOS 14+" />
+  <img src="https://img.shields.io/badge/dependencies-none-green.svg" alt="No dependencies" />
+</p>
+
+---
 
 ## Features
 
-- **Menu bar monitoring** — Live status of all Docker containers across multiple servers
-- **Multi-server support** — Monitor containers on any number of remote Docker hosts via SSH
-- **HTTP health checks** — Optional per-container health endpoint polling
-- **Status indicators** — Visual color-coded status: green (online), red (offline), orange (degraded)
-- **Compose project grouping** — Containers grouped by Docker Compose project
-- **Per-container overrides** — Custom URLs, display names, and health check paths
-- **SSH authentication** — Supports key-based auth (ssh-agent/1Password) and password auth (Keychain)
-- **Launch at login** — Optional auto-start via macOS ServiceManagement
-- **Zero dependencies** — Built entirely with system frameworks
+- [x] **Menu bar monitoring** — Live status of all Docker containers across multiple servers
+- [x] **Multi-server support** — Monitor any number of remote Docker hosts via SSH
+- [x] **HTTP health checks** — Per-container health endpoint polling with degraded state
+- [x] **Color-coded status** — Green (online), red (offline), orange (degraded)
+- [x] **Compose grouping** — Containers grouped by Docker Compose project
+- [x] **Per-container overrides** — Custom URLs, display names, and health check paths
+- [x] **SSH authentication** — Key-based (ssh-agent / 1Password) and password-based (Keychain)
+- [x] **Launch at login** — Auto-start via macOS ServiceManagement
+- [x] **Zero dependencies** — Built entirely with Apple system frameworks
 
 ## Requirements
 
 - macOS 14.0+
-- Swift 6.0+
+- Swift 6.3+ (to build from source)
 - Remote servers running Docker with SSH access
 
-## Build & Run
+## Installation
 
-No Xcode required. Built via `swift build` + manual `.app` bundle assembly.
+### Build from source
+
+No Xcode required — uses `swift build` + manual `.app` bundle assembly.
 
 ```sh
-make build   # Release build
-make debug   # Debug build
-make run     # Launch the app
-make install # Install to /Applications
-make clean   # Remove build artifacts
+git clone https://github.com/joe/open-stack-menu.git
+cd open-stack-menu
+make build    # Release build
+make run      # Launch the app
+make install  # Install to /Applications
 ```
 
 ## Configuration
 
-Config is stored at `~/Library/Application Support/OpenStackMenu/config.json`. It is pretty-printed JSON and human-editable. A default config is created on first launch.
+Config lives at `~/Library/Application Support/OpenStackMenu/config.json` and is human-editable JSON. A default config is created on first launch.
 
-### Config Schema
+Add your servers in Settings, or edit the config directly:
 
 ```json
 {
   "checkInterval": 60,
-  "notifyOnStatusChange": false,
-  "launchAtLogin": false,
   "servers": [
     {
-      "id": "UUID",
       "name": "Home Server",
       "host": "192.168.1.100",
       "port": 22,
       "username": "admin",
-      "enabled": true,
-      "identityFile": null,
-      "usePassword": false
-    }
-  ],
-  "containerOverrides": [
-    {
-      "id": "container-id",
-      "customURL": "http://example.com",
-      "healthCheckPath": "/health",
-      "enabled": true,
-      "displayName": "My Service"
+      "enabled": true
     }
   ]
 }
 ```
 
-## Architecture
+## Contributing
 
-### Data Flow
+Contributions are welcome! Feel free to open an issue or submit a pull request.
 
-```
-User's ~/.ssh/config + ssh-agent
-        ↓
-  SSHTransport (Process → ssh user@host docker ...)
-        ↓
-  DockerAPIClient (parses `docker ps --format '{{json .}}'` output)
-        ↓
-  ServiceMonitor (@MainActor ObservableObject)
-        ↓  @Published
-  SwiftUI Views (MenuBarView, ServiceRowView, SettingsView)
-```
-
-### Directory Structure
-
-```
-Sources/OpenStackMenu/
-├── Models/
-│   ├── AppConfig.swift          # App-wide configuration
-│   ├── ContainerInfo.swift      # Container domain model
-│   ├── ContainerStatus.swift    # Status enum + health check result
-│   └── ServerConnection.swift   # SSH server connection config
-├── Services/
-│   ├── ConfigurationManager.swift  # JSON config read/write
-│   ├── DockerAPIClient.swift       # Parses docker ps JSON output
-│   ├── HealthChecker.swift         # HTTP health check service
-│   ├── KeychainHelper.swift        # macOS Keychain password storage
-│   ├── SSHTransport.swift          # Remote command execution via ssh
-│   └── ServiceMonitor.swift        # Central @MainActor state manager
-└── Views/
-    ├── AboutView.swift             # About tab
-
-    ├── GeneralSettingsView.swift   # General preferences
-    ├── MenuBarView.swift           # Menu bar dropdown content
-    ├── ServersSettingsView.swift   # Server CRUD + connection test
-    ├── ServiceRowView.swift        # Single container row
-    ├── SettingsView.swift          # Settings window container
-    └── StatusIndicatorView.swift   # Pulsing status dot
-```
-
-### Status Model
-
-- **Container state** (from Docker API): `running`, `exited`, `paused`
-- **HTTP health check**: Optional, runs against a configurable path on running containers
-- **Combined status**: online (running), offline (stopped/exited), degraded (running but health check failed)
-
-## Authentication
-
-### Key-Based (Default)
-
-Uses the system `ssh` command with:
-- `SSH_AUTH_SOCK` from the environment (works when launched from Terminal)
-- Auto-discovery of 1Password SSH agent socket paths
-- SSH connection multiplexing for performance
-
-### Password-Based
-
-When `usePassword` is enabled for a server:
-- Password is stored securely in macOS Keychain
-- `SSH_ASKPASS` helper script retrieves the password at runtime
-- `PubkeyAuthentication` is disabled to avoid rejected key prompts
-
-## Dependencies
-
-**None.** Uses only system frameworks:
-- `SwiftUI` — UI
-- `Foundation` — Networking, JSON, file I/O
-- `AppKit` — Activation policy, opening URLs
-- `os` — Structured logging
-- `ServiceManagement` — Launch at login (macOS 13+)
-- `Security` — Keychain access
+For development guidelines and architecture details, see [AGENTS.md](AGENTS.md).
 
 ## License
 
-MIT
+Open Stack Menu is available under the [MIT License](LICENSE).
