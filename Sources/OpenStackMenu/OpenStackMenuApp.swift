@@ -39,6 +39,7 @@ struct OpenStackMenuApp: App {
         Settings {
             SettingsView(monitor: monitor)
         }
+        .defaultSize(width: 440, height: 320)
     }
 
     @ViewBuilder

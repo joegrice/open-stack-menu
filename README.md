@@ -101,7 +101,7 @@ Sources/OpenStackMenu/
 │   └── ServiceMonitor.swift        # Central @MainActor state manager
 └── Views/
     ├── AboutView.swift             # About tab
-    ├── ContainerOverrideView.swift # Per-container settings
+
     ├── GeneralSettingsView.swift   # General preferences
     ├── MenuBarView.swift           # Menu bar dropdown content
     ├── ServersSettingsView.swift   # Server CRUD + connection test

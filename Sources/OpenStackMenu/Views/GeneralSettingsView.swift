@@ -50,10 +50,6 @@ struct GeneralSettingsView: View {
                     }
             } header: {
                 Text("Notifications")
-            } footer: {
-                Text("Receive desktop notifications when a container goes offline or comes back online.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
 
             Section {
@@ -66,7 +62,7 @@ struct GeneralSettingsView: View {
                 Text("Startup")
             }
         }
-        .formStyle(.grouped)
+        .formStyle(.columns)
     }
 
     private func saveSettings() {

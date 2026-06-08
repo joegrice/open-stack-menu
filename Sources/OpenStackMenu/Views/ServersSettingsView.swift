@@ -39,7 +39,7 @@ struct ServersSettingsView: View {
 
                 Spacer()
             }
-            .padding(12)
+            .padding(.horizontal, 12).padding(.vertical, 8)
         }
         .onAppear {
             servers = monitor.currentConfig.servers
@@ -145,7 +145,7 @@ private struct ServerRow: View {
                 Button {
                     onTest()
                 } label: {
-                    Image(systemName: "arrow.triangle.turn.up.diamond")
+                    Image(systemName: "antenna.radiowaves.left.and.right")
                         .font(.system(size: 12))
                 }
                 .buttonStyle(.borderless)

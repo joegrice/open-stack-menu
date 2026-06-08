@@ -16,16 +16,18 @@ struct SettingsView: View {
                     Label("Servers", systemImage: "server.rack")
                 }
 
-            ContainerOverrideView(monitor: monitor)
-                .tabItem {
-                    Label("Containers", systemImage: "shippingbox")
-                }
-
             AboutView()
                 .tabItem {
                     Label("About", systemImage: "info.circle")
                 }
         }
-        .frame(minWidth: 520, minHeight: 420)
+        .frame(minWidth: 440, idealWidth: 440, minHeight: 320, idealHeight: 320)
+        .onAppear {
+            NSApp.setActivationPolicy(.regular)
+            NSApp.activate(ignoringOtherApps: true)
+        }
+        .onDisappear {
+            NSApp.setActivationPolicy(.accessory)
+        }
     }
 }

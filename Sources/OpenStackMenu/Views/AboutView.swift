@@ -3,11 +3,9 @@ import SwiftUI
 /// About this app.
 struct AboutView: View {
     var body: some View {
-        VStack(spacing: 16) {
-            Spacer().frame(height: 20)
-
+        VStack(spacing: 10) {
             Image(systemName: "server.rack")
-                .font(.system(size: 52))
+                .font(.system(size: 40))
                 .foregroundStyle(.primary)
 
             Text("Open Stack Menu")
@@ -20,9 +18,7 @@ struct AboutView: View {
             Text("Monitor your home server Docker containers from the macOS menu bar.")
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
-                .padding(.horizontal, 40)
-
-            Spacer()
+                .padding(.horizontal, 24)
 
             Text("Built with Swift + SwiftUI")
                 .font(.caption)
@@ -31,9 +27,7 @@ struct AboutView: View {
             Text("MIT License")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
-
-            Spacer().frame(height: 20)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity)
     }
 }

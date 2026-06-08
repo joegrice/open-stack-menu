@@ -16,6 +16,7 @@ build:
 	cp $(RELEASE_BIN) $(MACOS_DIR)/
 	cp Resources/Info.plist $(CONTENTS_DIR)/
 	cp Resources/askpass.sh $(RESOURCES_DIR)/
+	cp Resources/AppIcon.icns $(RESOURCES_DIR)/
 	chmod +x $(RESOURCES_DIR)/askpass.sh
 	codesign --force --deep --sign - $(APP_BUNDLE)
 	@echo "✅ App bundle created at $(APP_BUNDLE)"
@@ -27,6 +28,7 @@ debug:
 	cp $(DEBUG_BIN) $(MACOS_DIR)/
 	cp Resources/Info.plist $(CONTENTS_DIR)/
 	cp Resources/askpass.sh $(RESOURCES_DIR)/
+	cp Resources/AppIcon.icns $(RESOURCES_DIR)/
 	chmod +x $(RESOURCES_DIR)/askpass.sh
 	codesign --force --deep --sign - $(APP_BUNDLE)
 	@echo "✅ Debug app bundle created at $(APP_BUNDLE)"
