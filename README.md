@@ -6,10 +6,6 @@
 </p>
 
 <p align="center">
-  <img src="assets/screenshot.png" alt="Open Stack Menu screenshot" width="138" />
-</p>
-
-<p align="center">
   <a href="https://swiftpackageindex.com/joe/open-stack-menu">
     <img src="https://img.shields.io/badge/Swift-6.3+-orange.svg" alt="Swift 6.3+" />
   </a>
@@ -22,7 +18,9 @@
 
 ---
 
-![alt text](image.png)
+<p align="center">
+  <img src="assets/screenshot.png" alt="Open Stack Menu screenshot" width="400" />
+</p>
 
 ## Features
 
@@ -35,12 +33,6 @@
 - [x] **SSH authentication** — Key-based (ssh-agent / 1Password) and password-based (Keychain)
 - [x] **Launch at login** — Auto-start via macOS ServiceManagement
 - [x] **Zero dependencies** — Built entirely with Apple system frameworks
-
-## Requirements
-
-- macOS 14.0+
-- Swift 6.3+ (to build from source)
-- Remote servers running Docker with SSH access
 
 ## Installation
 
