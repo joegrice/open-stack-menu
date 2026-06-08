@@ -149,7 +149,6 @@ struct SSHTransport: Sendable {
             process.terminationHandler = { proc in
                 Task {
                     guard await state.tryResume() else { return }
-                    proc.terminate()
 
                     let outputData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
                     let errorData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
