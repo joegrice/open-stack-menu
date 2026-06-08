@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  <img src="assets/screenshot.png" alt="Open Stack Menu screenshot" width="400" />
+  <img src="assets/screenshot.png" alt="Open Stack Menu screenshot" width="138" />
 </p>
 
 <p align="center">
@@ -21,6 +21,8 @@
 </p>
 
 ---
+
+![alt text](image.png)
 
 ## Features
 
