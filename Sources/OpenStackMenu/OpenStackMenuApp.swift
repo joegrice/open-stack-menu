@@ -34,7 +34,7 @@ struct OpenStackMenuApp: App {
                     }
                 }
         }
-        .menuBarExtraStyle(.menu)
+        .menuBarExtraStyle(.window)
 
         Settings {
             SettingsView(monitor: monitor)

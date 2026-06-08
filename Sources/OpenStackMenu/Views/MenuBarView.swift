@@ -134,17 +134,22 @@ struct MenuBarView: View {
         let servers = monitor.currentConfig.servers
 
         return VStack(alignment: .leading, spacing: 0) {
-            ForEach(grouped, id: \.0) { group, containers in
-                GroupSection(
-                    title: group,
-                    containers: containers,
-                    statuses: statuses,
-                    healthResults: healthResults,
-                    overrides: overrides,
-                    servers: servers,
-                    onOpen: { monitor.openContainer($0) }
-                )
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(grouped, id: \.0) { group, containers in
+                        GroupSection(
+                            title: group,
+                            containers: containers,
+                            statuses: statuses,
+                            healthResults: healthResults,
+                            overrides: overrides,
+                            servers: servers,
+                            onOpen: { monitor.openContainer($0) }
+                        )
+                    }
+                }
             }
+            .frame(height: 350)
 
             Divider()
 
@@ -156,9 +161,16 @@ struct MenuBarView: View {
 
     private var bottomBar: some View {
         VStack(spacing: 2) {
-            Button {
-                monitor.refreshAll()
-            } label: {
+            lastRefreshText
+                .font(.system(size: 10))
+                .foregroundStyle(.tertiary)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.top, 2)
+
+            BottomBarButton(
+                action: { monitor.refreshAll() },
+                keyboardShortcut: "r"
+            ) {
                 HStack {
                     if monitor.isRefreshing {
                         ProgressView()
@@ -172,16 +184,6 @@ struct MenuBarView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .disabled(monitor.isRefreshing)
-            .keyboardShortcut("r")
-            .buttonStyle(.borderless)
-
-            lastRefreshText
-                .font(.system(size: 10))
-                .foregroundStyle(.tertiary)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.bottom, 4)
-
-            Divider()
 
             SettingsLink {
                 HStack {
@@ -191,18 +193,18 @@ struct MenuBarView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .keyboardShortcut(",", modifiers: .command)
+            .buttonStyle(BottomBarLinkButtonStyle())
 
-            Button {
-                NSApplication.shared.terminate(nil)
-            } label: {
+            BottomBarButton(
+                action: { NSApplication.shared.terminate(nil) },
+                keyboardShortcut: "q"
+            ) {
                 HStack {
                     Image(systemName: "power")
                     Text("Quit Open Stack Menu")
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .keyboardShortcut("q", modifiers: .command)
-            .buttonStyle(.borderless)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
@@ -255,5 +257,62 @@ private struct GroupSection: View {
 
             Divider().padding(.top, 2)
         }
+    }
+}
+
+// MARK: - Bottom Bar Button
+
+/// A button with hover and press highlighting for the bottom bar.
+private struct BottomBarButton<Label: View>: View {
+    let action: () -> Void
+    let keyboardShortcut: KeyEquivalent
+    @ViewBuilder let label: () -> Label
+
+    @State private var isHovering = false
+
+    var body: some View {
+        Button(action: action) {
+            label()
+                .padding(.horizontal, 6)
+                .padding(.vertical, 4)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(isHovering
+                              ? Color.accentColor.opacity(0.2)
+                              : Color.clear)
+                )
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .keyboardShortcut(keyboardShortcut, modifiers: .command)
+        .onHover { hovering in
+            isHovering = hovering
+        }
+        .animation(.easeInOut(duration: 0.1), value: isHovering)
+    }
+}
+
+/// Button style for use with `SettingsLink` — applies the same hover highlight
+/// as `BottomBarButton` so all three rows render identically.
+private struct BottomBarLinkButtonStyle: ButtonStyle {
+    @State private var isHovering = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .padding(.horizontal, 6)
+            .padding(.vertical, 4)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(isHovering
+                          ? Color.accentColor.opacity(0.2)
+                          : Color.clear)
+            )
+            .contentShape(Rectangle())
+            .onHover { hovering in
+                isHovering = hovering
+            }
+            .animation(.easeInOut(duration: 0.1), value: isHovering)
     }
 }

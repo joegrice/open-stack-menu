@@ -57,8 +57,7 @@ Sources/OpenStackMenu/
     ├── MenuBarView.swift           # Menu bar dropdown content
     ├── ServersSettingsView.swift   # Server CRUD + connection test
     ├── ServiceRowView.swift        # Single container row
-    ├── SettingsView.swift          # Settings window container
-    └── StatusIndicatorView.swift   # Pulsing status dot
+    └── SettingsView.swift          # Settings window container
 ```
 
 ### Configuration

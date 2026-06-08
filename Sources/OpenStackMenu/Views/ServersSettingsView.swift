@@ -289,7 +289,7 @@ private struct ServerEditSheet: View {
                     save()
                 }
                 .keyboardShortcut(.return, modifiers: [])
-                .disabled(name.isEmpty || host.isEmpty || username.isEmpty || (usePassword && password.isEmpty))
+                .disabled(name.isEmpty || host.isEmpty || username.isEmpty || passwordRequiredButEmpty)
             }
             .padding()
         }
@@ -299,6 +299,17 @@ private struct ServerEditSheet: View {
     private var isEdit: Bool {
         if case .edit = mode { return true }
         return false
+    }
+
+    /// True when password auth is enabled but no password is available
+    /// (either user didn't enter one, or no keychain entry exists for editing)
+    private var passwordRequiredButEmpty: Bool {
+        guard usePassword else { return false }
+        guard password.isEmpty else { return false }
+        // Adding new server - must enter password
+        if !isEdit { return true }
+        // Editing - check if keychain entry exists
+        return !KeychainHelper.passwordExists(for: serverID)
     }
 
     private func save() {
@@ -312,11 +323,21 @@ private struct ServerEditSheet: View {
             usePassword: usePassword
         )
 
-        // Store password in Keychain if password auth is enabled
-        if usePassword && !password.isEmpty {
-            _ = KeychainHelper.storePassword(for: serverID, password: password)
+        // Always handle keychain when password auth is enabled
+        if usePassword {
+            if !password.isEmpty {
+                // User entered a new password - store it
+                _ = KeychainHelper.storePassword(for: serverID, password: password)
+            } else if isEdit {
+                // Editing with empty password field - preserve existing keychain entry
+                // by retrieving and re-storing it (ensures entry exists)
+                if let existingPassword = KeychainHelper.retrievePassword(for: serverID) {
+                    _ = KeychainHelper.storePassword(for: serverID, password: existingPassword)
+                }
+                // If no existing password, we can't save - validation should prevent this
+            }
         } else if isEdit {
-            // Clear password from Keychain if switching away from password auth
+            // Switching away from password auth - clear keychain
             _ = KeychainHelper.deletePassword(for: serverID)
         }
 

@@ -14,9 +14,15 @@ struct ContainerInfo: Identifiable, Hashable, Sendable {
 
     var displayName: String { name }
 
-    /// Only TCP ports
+    /// Only TCP ports, deduplicated by (publicPort, privatePort).
+    /// Docker often publishes the same port over both IPv4 and IPv6,
+    /// producing duplicate entries — we keep only the first.
     var httpPorts: [PortMapping] {
-        ports.filter { $0.type == "tcp" }
+        var seen = Set<String>()
+        return ports.filter { $0.type == "tcp" }.filter { mapping in
+            let key = "\(mapping.publicPort ?? -1):\(mapping.privatePort)"
+            return seen.insert(key).inserted
+        }
     }
 
     /// Best guess URL port: first TCP public port, or first TCP private port

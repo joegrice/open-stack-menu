@@ -9,44 +9,52 @@ struct ServiceRowView: View {
     let serverHost: String?
     let onOpen: () -> Void
 
+    @State private var isHovering = false
+
     var body: some View {
         Button {
             onOpen()
         } label: {
-            HStack(spacing: 8) {
-                StatusIndicatorView(status: status)
+            HStack(spacing: 6) {
+                Text(status.emoji)
+                    .font(.system(size: 10))
 
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(displayName)
-                        .font(.system(size: 13))
-                        .fontWeight(.medium)
-                        .lineLimit(1)
-
-                    if status == .degraded {
-                        Text(degradedSubtitle)
-                            .font(.system(size: 9))
-                            .foregroundStyle(.orange)
-                            .lineLimit(1)
-                    }
-                }
+                Text(displayName)
+                    .font(.system(size: 13))
+                    .fontWeight(.medium)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
 
                 Spacer()
 
-                if let port = container.httpPorts.first {
-                    Text(portLabel(for: port))
-                        .font(.system(size: 10, weight: .medium, design: .monospaced))
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(Color.secondary.opacity(0.2))
-                        )
+                if !container.httpPorts.isEmpty {
+                    HStack(spacing: 3) {
+                        ForEach(container.httpPorts, id: \.self) { port in
+                            Text(portLabel(for: port))
+                                .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                .foregroundStyle(.primary)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 3)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(isHovering
+                                              ? Color.accentColor.opacity(0.25)
+                                              : Color.secondary.opacity(0.3))
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .strokeBorder(
+                                            isHovering ? Color.accentColor.opacity(0.6) : .clear,
+                                            lineWidth: 1
+                                        )
+                                )
+                        }
+                    }
                 }
 
                 Image(systemName: "arrow.up.forward.app")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.tertiary)
+                    .font(.system(size: 9))
+                    .foregroundStyle(isHovering ? .primary : .secondary)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
@@ -54,6 +62,10 @@ struct ServiceRowView: View {
         }
         .buttonStyle(.plain)
         .help(tooltip)
+        .onHover { hovering in
+            isHovering = hovering
+        }
+        .animation(.easeInOut(duration: 0.15), value: isHovering)
     }
 
     private var displayName: String {

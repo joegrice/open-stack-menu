@@ -41,5 +41,32 @@ final class OpenStackMenuTests: XCTestCase {
         XCTAssertEqual(ContainerStatus.online.color, .green)
         XCTAssertEqual(ContainerStatus.offline.color, .red)
         XCTAssertEqual(ContainerStatus.degraded.color, .orange)
+        XCTAssertEqual(ContainerStatus.restarting.color, .orange)
+        XCTAssertEqual(ContainerStatus.unknown.color, .gray)
+        XCTAssertEqual(ContainerStatus.checking.color, .blue)
+    }
+
+    func testContainerStatusSymbols() {
+        XCTAssertEqual(ContainerStatus.online.symbolName, "circle.fill")
+        XCTAssertEqual(ContainerStatus.online.symbolColor, .green)
+        XCTAssertEqual(ContainerStatus.offline.symbolName, "circle.fill")
+        XCTAssertEqual(ContainerStatus.offline.symbolColor, .red)
+        XCTAssertEqual(ContainerStatus.degraded.symbolName, "circle.fill")
+        XCTAssertEqual(ContainerStatus.degraded.symbolColor, .orange)
+        XCTAssertEqual(ContainerStatus.restarting.symbolName, "arrow.clockwise")
+        XCTAssertEqual(ContainerStatus.restarting.symbolColor, .orange)
+        XCTAssertEqual(ContainerStatus.unknown.symbolName, "circle")
+        XCTAssertEqual(ContainerStatus.unknown.symbolColor, .gray)
+        XCTAssertEqual(ContainerStatus.checking.symbolName, "circle.fill")
+        XCTAssertEqual(ContainerStatus.checking.symbolColor, .blue)
+    }
+
+    func testContainerStatusEmoji() {
+        XCTAssertEqual(ContainerStatus.online.emoji, "🟢")
+        XCTAssertEqual(ContainerStatus.offline.emoji, "🔴")
+        XCTAssertEqual(ContainerStatus.degraded.emoji, "🟠")
+        XCTAssertEqual(ContainerStatus.restarting.emoji, "🟠")
+        XCTAssertEqual(ContainerStatus.unknown.emoji, "⚪")
+        XCTAssertEqual(ContainerStatus.checking.emoji, "🔵")
     }
 }

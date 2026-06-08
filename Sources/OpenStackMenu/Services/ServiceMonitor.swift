@@ -231,6 +231,8 @@ final class ServiceMonitor: ObservableObject {
                                 baseStatus = .online
                             case "paused":
                                 baseStatus = .degraded
+                            case "restarting":
+                                baseStatus = .restarting
                             default:
                                 baseStatus = .offline
                             }
