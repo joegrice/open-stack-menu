@@ -1,7 +1,7 @@
 ---
 description: Phase 1 of the auto-orchestration pipeline. Analyzes tasks, detects target subproject, and produces detailed architecture plans with specific file changes.
 mode: subagent
-model: opencode-go/qwen3.6-plus
+model: opencode-go/qwen3.7-plus
 permission:
   edit: deny
   bash: ask

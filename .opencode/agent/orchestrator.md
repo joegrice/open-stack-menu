@@ -34,14 +34,14 @@ Call the `builder` subagent with the plan from Phase 1. It will:
 - Implement all code changes described in the plan
 - Follow the project's conventions from `AGENTS.md`
 - Write clean, functional code
-- **For React/Next.js tasks**: Load both the `vercel-react-best-practices` skill AND the `vercel-composition-patterns` skill. Apply performance rules and composition patterns during implementation (especially CRITICAL and HIGH impact rules: eliminating waterfalls, bundle size optimization, server-side performance, and component architecture)
+- **For SwiftUI tasks**: Load the `swiftui-expert-skill` skill. Apply correctness rules, performance patterns, and macOS-specific conventions during implementation
 
 ### Phase 3: Reviewing
 Call the `reviewer` subagent with the code changes from Phase 2. It will:
 - Audit for security vulnerabilities
 - Check architectural consistency
 - Identify performance bottlenecks
-- **For React/Next.js tasks**: Load both the `vercel-react-best-practices` skill AND the `vercel-composition-patterns` skill. Audit code against performance rules and composition patterns, flagging violations by rule prefix (e.g., `async-parallel`, `bundle-barrel-imports`, `rerender-*`, `architecture-*`, `state-*`)
+- **For SwiftUI tasks**: Load the `swiftui-expert-skill` skill. Audit code against its correctness checklist and topic references, flagging violations by topic area (e.g., `state-management`, `view-structure`, `performance-patterns`, `macos-scenes`)
 - Produce a list of required adjustments
 
 ### Phase 4: Fixing & Polishing

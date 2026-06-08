@@ -26,18 +26,17 @@ This project uses a 4-phase automated pipeline. The `orchestrator` agent (defaul
 
 | Phase | Agent | Model | Role |
 |---|---|---|---|
-| 1 | `planner` | qwen3.6-plus | Architecture & planning |
+| 1 | `planner` | qwen3.7-plus | Architecture & planning |
 | 1.5 | `grill-me` skill | — | Interactive plan validation with user |
-| 2 | `builder` | deepseek-v4-flash | Code generation (applies React best practices + composition patterns, Go conventions) |
-| 3 | `reviewer` | qwen3.6-plus | Security & architecture audit (audits against all skill rules) |
+| 2 | `builder` | deepseek-v4-flash | Code generation (applies SwiftUI best practices, Swift concurrency) |
+| 3 | `reviewer` | qwen3.7-plus | Security & architecture audit (audits against skill rules) |
 | 4 | `fixer` | deepseek-v4-pro | Apply fixes with CodeGraph |
 
 ### Skills
 
 Skills are in `.agents/skills/`:
 - `grill-me` — Interactive plan stress-testing and design validation
-- `vercel-react-best-practices` — 70 React/Next.js performance rules across 8 categories (auto-applied in Phases 2-3 for React/Next.js tasks)
-- `vercel-composition-patterns` — 8 React composition rules across 4 categories: compound components, state lifting, variant patterns, React 19 APIs (auto-applied in Phases 2-3 for React/Next.js tasks)
+- `swiftui-expert-skill` — SwiftUI best practices for iOS/macOS (state management, view composition, performance, macOS-specific patterns). Auto-applied in Phases 2-3 for SwiftUI tasks.
 
 ### Agent Files
 

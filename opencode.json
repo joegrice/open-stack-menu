@@ -16,7 +16,7 @@
     "planner": {
       "description": "Phase 1: Analyzes tasks and produces architecture plans",
       "mode": "subagent",
-      "model": "opencode-go/qwen3.6-plus",
+      "model": "opencode-go/qwen3.7-plus",
       "permission": {
         "edit": "deny",
         "bash": "ask"
@@ -25,12 +25,12 @@
     "builder": {
       "description": "Phase 2: Implements code from the architecture plan",
       "mode": "subagent",
-      "model": "deepseek/deepseek-v4-flash"
+      "model": "opencode-go/deepseek-v4-flash"
     },
     "reviewer": {
       "description": "Phase 3: Audits code for security, architecture, and performance issues",
       "mode": "subagent",
-      "model": "opencode-go/qwen3.6-plus",
+      "model": "opencode-go/qwen3.7-plus",
       "permission": {
         "edit": "deny",
         "bash": "ask"
@@ -39,7 +39,7 @@
     "fixer": {
       "description": "Phase 4: Applies fixes from the review audit using CodeGraph",
       "mode": "subagent",
-      "model": "deepseek/deepseek-v4-pro"
+      "model": "opencode-go/deepseek-v4-pro"
     }
   },
   "instructions": [".opencode/instructions.md"]
